@@ -9,50 +9,65 @@ variables:
   acr_name: acrcicdaks
 
 steps:
+- task: AzureCLI@2
+  displayName: Docker Build & Push
+  inputs:
+    azureSubscription: 'Assinatura de Plataformas MSDN(4ee6b987-e149-41bb-b8a5-39216f3677aa)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      docker build -t $(acr_name).azurecr.io/webapp:$(tag) app-dotnet
+      az acr login -n $(acr_name)
+      docker push $(acr_name).azurecr.io/webapp:$(tag)
 
-
-
-# - task: AzureCLI@2
-#   displayName: Docker Build & Push
-#   inputs:
-#     azureSubscription: 'Microsoft-Azure-NonProd'
-#     scriptType: 'bash'
-#     scriptLocation: 'inlineScript'
-#     inlineScript: |
-#       docker build -t $(acr_name).azurecr.io/webapp:$(tag) app-dotnet
-#       az acr login -n $(acr_name)
-#       docker push $(acr_name).azurecr.io/webapp:$(tag)
-
-
-
-- task: qetza.replacetokens.replacetokens-task.replacetokens@3
+- task: replacetokens@6
   displayName: 'Replace Image TAG'
   inputs:
-    rootDirectory: '02_kubernetes_aks'
-    targetFiles: 'app-deploy.yaml'
-    encoding: 'auto'
-    writeBOM: true
-    actionOnMissing: 'warn'
-    keepToken: false
-    tokenPrefix: '__'
-    tokenSuffix: '__'
-    useLegacyPattern: false
-    enableTransforms: false
-    enableTelemetry: true
+    root: '02_kubernetes_aks'
+    sources: 'app-deploy.yaml'
+    tokenPattern: 'doubleunderscores'
+
+# - task: qetza.replacetokens.replacetokens-task.replacetokens@3
+#   displayName: 'Replace Image TAG'
+#   inputs:
+#     rootDirectory: '02_kubernetes_aks'
+#     targetFiles: 'app-deploy.yaml'
+#     encoding: 'auto'
+#     writeBOM: true
+#     actionOnMissing: 'warn'
+#     keepToken: false
+#     tokenPrefix: '__'
+#     tokenSuffix: '__'
+#     useLegacyPattern: false
+#     enableTransforms: false
+#     enableTelemetry: true
 
 - script: cat 02_kubernetes_aks/app-deploy.yaml
   displayName: View app-deploy.yaml
 
 - task: Kubernetes@1
-  displayName: Kubernetes Deploy
   inputs:
     connectionType: 'Azure Resource Manager'
-    azureSubscriptionEndpoint: 'Microsoft-Azure-NonProd'
-    azureResourceGroup: 'rg-aks'
-    kubernetesCluster: 'aks-cluster-dev'
+    azureSubscriptionEndpoint: 'Assinatura de Plataformas MSDN(4ee6b987-e149-41bb-b8a5-39216f3677aa)'
+    azureResourceGroup: 'rg-cicd-yaml-aks'
+    kubernetesCluster: 'aks-cluster-cicd'
     namespace: 'default'
     command: 'apply'
     useConfigurationFile: true
     configuration: '02_kubernetes_aks'
     secretType: 'dockerRegistry'
     containerRegistryType: 'Azure Container Registry'
+
+# - task: Kubernetes@1
+#   displayName: Kubernetes Deploy
+#   inputs:
+#     connectionType: 'Azure Resource Manager'
+#     azureSubscriptionEndpoint: 'Microsoft-Azure-NonProd'
+#     azureResourceGroup: 'rg-aks'
+#     kubernetesCluster: 'aks-cluster-dev'
+#     namespace: 'default'
+#     command: 'apply'
+#     useConfigurationFile: true
+#     configuration: '02_kubernetes_aks'
+#     secretType: 'dockerRegistry'
+#     containerRegistryType: 'Azure Container Registry'
