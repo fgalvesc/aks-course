@@ -27,21 +27,6 @@ steps:
     sources: 'app-deploy.yaml'
     tokenPattern: 'doubleunderscores'
 
-# - task: qetza.replacetokens.replacetokens-task.replacetokens@3
-#   displayName: 'Replace Image TAG'
-#   inputs:
-#     rootDirectory: '02_kubernetes_aks'
-#     targetFiles: 'app-deploy.yaml'
-#     encoding: 'auto'
-#     writeBOM: true
-#     actionOnMissing: 'warn'
-#     keepToken: false
-#     tokenPrefix: '__'
-#     tokenSuffix: '__'
-#     useLegacyPattern: false
-#     enableTransforms: false
-#     enableTelemetry: true
-
 - script: cat 02_kubernetes_aks/app-deploy.yaml
   displayName: View app-deploy.yaml
 
@@ -58,16 +43,4 @@ steps:
     secretType: 'dockerRegistry'
     containerRegistryType: 'Azure Container Registry'
 
-# - task: Kubernetes@1
-#   displayName: Kubernetes Deploy
-#   inputs:
-#     connectionType: 'Azure Resource Manager'
-#     azureSubscriptionEndpoint: 'Microsoft-Azure-NonProd'
-#     azureResourceGroup: 'rg-aks'
-#     kubernetesCluster: 'aks-cluster-dev'
-#     namespace: 'default'
-#     command: 'apply'
-#     useConfigurationFile: true
-#     configuration: '02_kubernetes_aks'
-#     secretType: 'dockerRegistry'
-#     containerRegistryType: 'Azure Container Registry'
+
