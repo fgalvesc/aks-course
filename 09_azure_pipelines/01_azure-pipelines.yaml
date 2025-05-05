@@ -22,39 +22,69 @@ parameters:
     type: boolean
     default: false
 
-steps:
-- task: AzureCLI@2
-  displayName: Docker Build & Push
-  inputs:
-    azureSubscription: 'Assinatura de Plataformas MSDN(4ee6b987-e149-41bb-b8a5-39216f3677aa)'
-    scriptType: 'bash'
-    scriptLocation: 'inlineScript'
-    inlineScript: |
-      docker build -t $(acr_name).azurecr.io/webapp:$(tag) app-dotnet
-      az acr login -n $(acr_name)
-      docker push $(acr_name).azurecr.io/webapp:$(tag)
+stages:
+- stage: Build
+  displayName: Build & Test Code
+  jobs:
+  
+  - job: ScanAndTest
+    displayName: Scan & Test Code
+    pool:
+     vmImage: 'ubuntu-latest'
+    
+    steps:
 
-- task: replacetokens@6
-  displayName: 'Replace Image TAG'
-  inputs:
-    root: '02_kubernetes_aks'
-    sources: 'app-deploy.yaml'
-    tokenPattern: 'doubleunderscores'
+    - task: Bash@3
+      displayName: Install Checkov
+      enabled: ${{ parameters.runCompletePipeline }}
+      inputs:
+        targetType: 'inline'
+        script: 
+          ls $(pwd)/app/dockerfile/java
+          sudo apt update
+          sudo apt install software-properties-common
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt install python3.7
+          sudo apt install python3-pip
+          sudo python3.7 -m pip install -U checkov
+        workingDirectory: '$(System.DefaultWorkingDirectory)'
 
-- script: cat 02_kubernetes_aks/app-deploy.yaml
-  displayName: View app-deploy.yaml
 
-- task: Kubernetes@1
-  inputs:
-    connectionType: 'Azure Resource Manager'
-    azureSubscriptionEndpoint: 'Assinatura de Plataformas MSDN(4ee6b987-e149-41bb-b8a5-39216f3677aa)'
-    azureResourceGroup: 'rg-cicd-yaml-aks'
-    kubernetesCluster: 'aks-cluster-cicd'
-    namespace: 'default'
-    command: 'apply'
-    useConfigurationFile: true
-    configuration: '02_kubernetes_aks'
-    secretType: 'dockerRegistry'
-    containerRegistryType: 'Azure Container Registry'
+
+
+# steps:
+# - task: AzureCLI@2
+#   displayName: Docker Build & Push
+#   inputs:
+#     azureSubscription: 'Assinatura de Plataformas MSDN(4ee6b987-e149-41bb-b8a5-39216f3677aa)'
+#     scriptType: 'bash'
+#     scriptLocation: 'inlineScript'
+#     inlineScript: |
+#       docker build -t $(acr_name).azurecr.io/webapp:$(tag) app-dotnet
+#       az acr login -n $(acr_name)
+#       docker push $(acr_name).azurecr.io/webapp:$(tag)
+
+# - task: replacetokens@6
+#   displayName: 'Replace Image TAG'
+#   inputs:
+#     root: '02_kubernetes_aks'
+#     sources: 'app-deploy.yaml'
+#     tokenPattern: 'doubleunderscores'
+
+# - script: cat 02_kubernetes_aks/app-deploy.yaml
+#   displayName: View app-deploy.yaml
+
+# - task: Kubernetes@1
+#   inputs:
+#     connectionType: 'Azure Resource Manager'
+#     azureSubscriptionEndpoint: 'Assinatura de Plataformas MSDN(4ee6b987-e149-41bb-b8a5-39216f3677aa)'
+#     azureResourceGroup: 'rg-cicd-yaml-aks'
+#     kubernetesCluster: 'aks-cluster-cicd'
+#     namespace: 'default'
+#     command: 'apply'
+#     useConfigurationFile: true
+#     configuration: '02_kubernetes_aks'
+#     secretType: 'dockerRegistry'
+#     containerRegistryType: 'Azure Container Registry'
 
 
